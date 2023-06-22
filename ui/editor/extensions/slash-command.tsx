@@ -26,6 +26,8 @@ import { toast } from "sonner";
 import va from "@vercel/analytics";
 import Magic from "@/ui/shared/magic";
 import { handleImageUpload } from "@/lib/utils/editor";
+import { openBrandBird } from "@brandbird/integration";
+import BrandBirdIcon from "@/ui/shared/brandbird";
 
 interface CommandItemProps {
   title: string;
@@ -171,6 +173,26 @@ const getSuggestionItems = ({ query }: { query: string }) => {
         input.click();
       },
     },
+    {
+      title: "Open BrandBird",
+      description: "Design beautiful images for your post.",
+      icon: <BrandBirdIcon size={24} />,
+      command: async ({ editor, range }: Command) => {
+        const blob = await openBrandBird({
+          provider: "Novel",
+          platform: "twitter",
+          width: 1200,
+          height: 700,
+        });
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          const base64 = reader.result;
+          editor.chain().focus().deleteRange(range).run();
+          editor.chain().focus().setImage({ src: base64 }).run();
+        };
+      },
+    },
   ].filter((item) => {
     if (typeof query === "string" && query.length > 0) {
       return item.title.toLowerCase().includes(query.toLowerCase());
@@ -289,7 +311,7 @@ const CommandList = ({
 
   return items.length > 0 ? (
     <div
-    id="slash-command"
+      id="slash-command"
       ref={commandListContainer}
       className="z-50 h-auto max-h-[330px] w-72 overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white px-1 py-2 shadow-md transition-all"
     >
